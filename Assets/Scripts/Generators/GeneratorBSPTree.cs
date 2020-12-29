@@ -32,7 +32,7 @@ public class GeneratorBSPTree : Generator {
 				if (l.childLeft == null && l.childRight == null) {
 					if (l.width > leafMaxSize
 						|| l.height > leafMaxSize
-						|| MapGenerator.rand.NextDouble() > 0.8d) {
+						|| mapGen.rand.NextDouble() > 0.8d) {
 						if (l.SplitLeaf()) {
 							leaves.AddLast(l.childLeft);
 							leaves.AddLast(l.childRight);
@@ -53,15 +53,15 @@ public class GeneratorBSPTree : Generator {
 				if (leaf.childRight != null) CreateRooms(leaf.childRight);
 				if (leaf.childLeft != null && leaf.childRight != null) {
 					if (leaf.childLeft.getRoom() != null && leaf.childRight.getRoom() != null) {
-						MapGenerator.CreateHall(map, leaf.childLeft.getRoom().getRect(), leaf.childRight.getRoom().getRect());
+						mapGen.CreateHall(map, leaf.childLeft.getRoom().getRect(), leaf.childRight.getRoom().getRect());
 					}
 				}
 			} else {
 				//create rooms in the end branches of the bsp tree
-				int w = MapGenerator.rand.Next(roomMinSize, (Math.Min(roomMaxSize, leaf.width - 1)));
-				int h = MapGenerator.rand.Next(roomMinSize, (Math.Min(roomMaxSize, leaf.height - 1)));
-				int x = MapGenerator.rand.Next(leaf.x, leaf.x + (leaf.width - 1) - w);
-				int y = MapGenerator.rand.Next(leaf.y, leaf.y + (leaf.height - 1) - h);
+				int w = mapGen.rand.Next(roomMinSize, (Math.Min(roomMaxSize, leaf.width - 1)));
+				int h = mapGen.rand.Next(roomMinSize, (Math.Min(roomMaxSize, leaf.height - 1)));
+				int x = mapGen.rand.Next(leaf.x, leaf.x + (leaf.width - 1) - w);
+				int y = mapGen.rand.Next(leaf.y, leaf.y + (leaf.height - 1) - h);
 				leaf.setRoom(new Rectangle(x, y, w, h));
 				MapGenerator.FillArea(map, leaf.getRoom().getRect(), TILE.FLOOR);
 			}

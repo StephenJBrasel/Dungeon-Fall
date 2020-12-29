@@ -328,11 +328,12 @@ MonoBehaviour:
   maxWallCount: 4
   wallCountSearchExpanse: 1
   randomFillPercent: 0.4
-  eliminateSmallRooms: 0
-  eliminateSmallRoomsAttemptMaxCount: 5
-  degradeAttempts: 1
+  willCleanMap: 1
+  cleanMapMaxAttemptCount: 5
+  degradeAttempts: 0
   minRooms: 1
-  minArea: 5
+  minRoomArea: 50
+  minIslandArea: 50
 --- !u!1 &2026330018102388347
 GameObject:
   m_ObjectHideFlags: 0
@@ -478,11 +479,11 @@ MonoBehaviour:
   resizeWithResolution: 0
   width: 100
   height: 100
-  verticalBorderStrength: 5
-  horizontalBorderStrength: 5
+  verticalBorderStrength: 0
+  horizontalBorderStrength: 0
   meshUnitSize: 1
-  useRandomSeed: 0
-  seed: Stephen
+  useRandomSeed: 1
+  seed: 11
   generationType: 0
 --- !u!114 &1638884591
 MonoBehaviour:

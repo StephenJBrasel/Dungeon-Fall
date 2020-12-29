@@ -99,7 +99,7 @@ public class GeneratorRoomAddition : Generator {
 
 	private int[,] generateRoom() {
 		int[,] room;
-		double choice = MapGenerator.rand.NextDouble();
+		double choice = mapGen.rand.NextDouble();
 		if(rooms.Count > 1) {
 			if(choice < squareRoomChance) 
 				room = generateRoomSquare();
@@ -114,10 +114,10 @@ public class GeneratorRoomAddition : Generator {
 	}
 
 	private int[,] generateRoomCross() {
-		int HorizontalWidth = MapGenerator.rand.Next(crossRoomMinSize + 2, crossRoomMaxSize) / 2 * 2;
-		int VerticalHeight = MapGenerator.rand.Next(crossRoomMinSize + 2, crossRoomMaxSize) / 2 * 2;
-		int HorizontalHeight = MapGenerator.rand.Next(crossRoomMinSize, VerticalHeight - 2) / 2 * 2;
-		int VerticalWidth = MapGenerator.rand.Next(crossRoomMinSize, HorizontalWidth - 2) / 2 * 2;
+		int HorizontalWidth = mapGen.rand.Next(crossRoomMinSize + 2, crossRoomMaxSize) / 2 * 2;
+		int VerticalHeight = mapGen.rand.Next(crossRoomMinSize + 2, crossRoomMaxSize) / 2 * 2;
+		int HorizontalHeight = mapGen.rand.Next(crossRoomMinSize, VerticalHeight - 2) / 2 * 2;
+		int VerticalWidth = mapGen.rand.Next(crossRoomMinSize, HorizontalWidth - 2) / 2 * 2;
 		int[,] room = new int[HorizontalWidth, VerticalHeight];
 		MapGenerator.FillArea(room, new Rect(0, 0, room.GetLength(0), room.GetLength(1)), TILE.WALL);
 
@@ -131,8 +131,8 @@ public class GeneratorRoomAddition : Generator {
 	}
 
 	private int[,] generateRoomSquare() {
-		int roomWidth = MapGenerator.rand.Next(squareRoomMinSize, squareRoomMaxSize);
-		int roomHeight = MapGenerator.rand.Next(
+		int roomWidth = mapGen.rand.Next(squareRoomMinSize, squareRoomMaxSize);
+		int roomHeight = mapGen.rand.Next(
 			Math.Max((int)(roomWidth*0.5f), squareRoomMinSize), 
 			Math.Min((int)(roomWidth*0.5), squareRoomMaxSize));
 		int[,] room = new int[roomWidth, roomHeight];
@@ -149,21 +149,21 @@ public class GeneratorRoomAddition : Generator {
 		bool autoCalculateWallDensity = generator.autoCalculateWallDensity;
 		int wallCountSearchExpanse = generator.wallCountSearchExpanse;
 		double randomFillPercent = generator.randomFillPercent;
-		bool eliminateSmallRooms = generator.eliminateSmallRooms;
-		int eliminateSmallRoomsAttemptMaxCount = generator.eliminateSmallRoomsAttemptMaxCount;
+		bool willCleanMap = generator.willCleanMap;
+		int cleanMapMaxAttemptCount = generator.cleanMapMaxAttemptCount;
 		bool degradeAttempts = generator.degradeAttempts;
 		int minRooms = generator.minRooms;
-		int minArea = generator.minArea;
+		int minArea = generator.minRoomArea;
 
 		generator.numSmoothIterations = 5;
 		generator.autoCalculateWallDensity = true;
 		generator.wallCountSearchExpanse = 1;
 		generator.randomFillPercent = wallProbability;
-		generator.eliminateSmallRooms = true;
-		generator.eliminateSmallRoomsAttemptMaxCount = 5;
+		generator.willCleanMap = true;
+		generator.cleanMapMaxAttemptCount = 5;
 		generator.degradeAttempts = true;
 		generator.minRooms = 1;
-		generator.minArea = 4;
+		generator.minRoomArea = 4;
 		
 		ret = generator.generate(roomMaxSize, roomMaxSize);
 
@@ -171,11 +171,11 @@ public class GeneratorRoomAddition : Generator {
 		generator.autoCalculateWallDensity = autoCalculateWallDensity;
 		generator.wallCountSearchExpanse = wallCountSearchExpanse;
 		generator.randomFillPercent = randomFillPercent;
-		generator.eliminateSmallRooms = eliminateSmallRooms;
-		generator.eliminateSmallRoomsAttemptMaxCount = eliminateSmallRoomsAttemptMaxCount;
+		generator.willCleanMap = willCleanMap;
+		generator.cleanMapMaxAttemptCount = cleanMapMaxAttemptCount;
 		generator.degradeAttempts = degradeAttempts;
 		generator.minRooms = minRooms;
-		generator.minArea = minArea;
+		generator.minRoomArea = minArea;
 
 		return ret;
 	}

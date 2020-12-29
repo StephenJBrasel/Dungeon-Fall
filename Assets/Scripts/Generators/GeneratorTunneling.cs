@@ -19,17 +19,17 @@ public class GeneratorTunneling : Generator {
 
 		for (int i = 0, j; i < maxRooms; i++) {
 			int width, height;
-			width = MapGenerator.rand.Next(roomMinSize, roomMaxSize);
-			height = MapGenerator.rand.Next(roomMinSize, roomMaxSize);
-			//if (MapGenerator.rand.Next(1) == 0) {
-			//	width = MapGenerator.rand.Next(roomMinSize, roomMaxSize);
-			//	height = width + MapGenerator.rand.Next(-(int)Mathf.Log(width), (int)Mathf.Log(width));
+			width = mapGen.rand.Next(roomMinSize, roomMaxSize);
+			height = mapGen.rand.Next(roomMinSize, roomMaxSize);
+			//if (mapGen.rand.Next(1) == 0) {
+			//	width = mapGen.rand.Next(roomMinSize, roomMaxSize);
+			//	height = width + mapGen.rand.Next(-(int)Mathf.Log(width), (int)Mathf.Log(width));
 			//} else {
-			//	height = MapGenerator.rand.Next(roomMinSize, roomMaxSize);
-			//	width = height + MapGenerator.rand.Next(-(int)Mathf.Log(height), (int)Mathf.Log(height));
+			//	height = mapGen.rand.Next(roomMinSize, roomMaxSize);
+			//	width = height + mapGen.rand.Next(-(int)Mathf.Log(height), (int)Mathf.Log(height));
 			//}
-			int x = MapGenerator.rand.Next(1, w - width - 1);
-			int y = MapGenerator.rand.Next(1, h - height - 1);
+			int x = mapGen.rand.Next(1, w - width - 1);
+			int y = mapGen.rand.Next(1, h - height - 1);
 
 			Rect newRoom = new Rect(x, y, width, height);
 			for (j = 0; j < rooms.Count; j++) 
@@ -37,7 +37,7 @@ public class GeneratorTunneling : Generator {
 			if (j >= rooms.Count) {
 				MapGenerator.FillArea(map, newRoom, TILE.FLOOR);
 				if (rooms.Count != 0) {
-					MapGenerator.CreateHall(map, newRoom, (Rect)rooms[rooms.Count - 1]);
+					mapGen.CreateHall(map, newRoom, (Rect)rooms[rooms.Count - 1]);
 				}
 				rooms.Add(newRoom);
 			}

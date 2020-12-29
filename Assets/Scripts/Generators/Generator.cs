@@ -7,6 +7,10 @@ public abstract class Generator : MonoBehaviour {
 	protected int w = 100;
 	protected int h = 100;
 	protected int[,] map;
+	protected MapGenerator mapGen;
+	void Start() {
+		mapGen = GetComponentInParent<MapGenerator>();
+	}
 	public int[,] generate(int w, int h) {
 		map = new int[w, h];
 		this.w = w;

@@ -16,20 +16,24 @@ public class GeneratorCellularAutomata : Generator {
 	public int wallCountSearchExpanse = 1;
 	[Range(0.0f, 1.0f)]
 	public double randomFillPercent = 0.40d;
-	public bool eliminateSmallRooms = false;
-	[ConditionalHide("eliminateSmallRooms", true, true)]
+	[Tooltip("")]
+	public bool willCleanMap = true;
+	[ConditionalHide("willCleanMap", true, true)]
 	[Tooltip("The number of tries to generate a desired room.")]
-	public int eliminateSmallRoomsAttemptMaxCount = 5;
-	[ConditionalHide("eliminateSmallRooms", true, true)]
+	public int cleanMapMaxAttemptCount = 5;
+	[ConditionalHide("willCleanMap", true, true)]
 	[Tooltip("True by default, if false will return an unfloodfilled cellular automata generation." +
 		"\nOtherwise, resets the attempt count, decreases both minRooms and minArea (iteratively, never less than 1), and restarts the generation process")]
 	public bool degradeAttempts = true;
-	[ConditionalHide("eliminateSmallRooms", true, true)]
+	[ConditionalHide("willCleanMap", true, true)]
 	[Tooltip("The minimum number of rooms to be left with. Must be greater than 1.")]
 	public int minRooms = 1;
-	[ConditionalHide("eliminateSmallRooms", true, true)]
-	[Tooltip("The minimum number of floor tiles that the room with the largest number of floor tiles has to have.")]
-	public int minArea = 4;
+	[ConditionalHide("willCleanMap", true, true)]
+	[Tooltip("The (exclusive) minimum number of floor tiles that the room with the largest number of floor tiles has to have.")]
+	public int minRoomArea = 25;
+	[ConditionalHide("willCleanMap", true, true)]
+	[Tooltip("The (exclusive) minimum number of wall tiles that the pillar/island with the largest number of floor tiles has to have.")]
+	public int minIslandArea = 50;
 
 	private int originalminRooms;
 	private int originalminArea;
@@ -43,34 +47,35 @@ public class GeneratorCellularAutomata : Generator {
 	}
 
 	protected override void build() {
-		originalminArea = minArea;
+		originalminArea = minRoomArea;
 		originalminRooms = minRooms;
 		eliminateSmallRoomsAttempts = 0;
 		bool ConditionsMet = false;
+		if (mapGen == null) mapGen = GetComponentInParent<MapGenerator>();
 		while (!ConditionsMet) {
 			// Initialize Paramteres
 			if (autoCalculateWallDensity)
 				minWallCount = maxWallCount = 2 * wallCountSearchExpanse * (wallCountSearchExpanse + 1);
 			// Randomize the map
-			MapGenerator.CreateContainer(map, new Rect(0, 0, w, h), MapGenerator.floorOrWall, (float)randomFillPercent);
+			MapGenerator.CreateContainer(map, new Rect(0, 0, w, h), mapGen.floorOrWall, (float)randomFillPercent);
 			// Smooth the map
 			for (int i = 0; i < numSmoothIterations; i++)
 				SmoothMap();
 			// Floodfill Smaller areas
-			if (eliminateSmallRooms){
-				if(++eliminateSmallRoomsAttempts >= eliminateSmallRoomsAttemptMaxCount) {
+			if (willCleanMap){
+				if(++eliminateSmallRoomsAttempts >= cleanMapMaxAttemptCount) {
 					if (degradeAttempts) {
 						eliminateSmallRoomsAttempts = 0;
 						minRooms = Math.Max(minRooms - 1, 1);
-						minArea = Math.Max(minArea - 1, 1);
-						if (minRooms + minArea <= 2) break;
+						minRoomArea = Math.Max(minRoomArea - 1, 1);
+						if (minRooms + minRoomArea <= 2) break;
 					} else break;
 				}
-				ConditionsMet = FloodFill();
+				ConditionsMet = CleanMap();
 			}
 			else ConditionsMet = true;
 		}
-		minArea = originalminArea;
+		minRoomArea = originalminArea;
 		minRooms = originalminRooms;
 	}
 
@@ -119,19 +124,31 @@ public class GeneratorCellularAutomata : Generator {
 		return IsInMap((int)v.x, (int)v.y);
 	}
 
-	private bool FloodFill() {
-		List<HashSet<Vector2>> rooms = GetRegions();
+	private bool CleanMap() {
+		List<HashSet<Vector2>> regions = GetRegions();
+		List<HashSet<Vector2>> rooms = GetTypedRegions(regions, TILE.FLOOR);
+		List<HashSet<Vector2>> islands = GetTypedRegions(regions, TILE.WALL);
+		//fill the appropriate floor regions in.
+		int i;
 		if (rooms.Count >= minRooms) {
-			int i, j, indexMin, roomsCount = rooms.Count;
+			int j, indexMin, roomsCount = rooms.Count;
 			for (i = roomsCount - 1; i >= 0; i--)
-				if (rooms[i].Count < minArea) break;
+				if (rooms[i].Count < minRoomArea) break;
 			indexMin = Math.Max(0, i);
 			if (indexMin < roomsCount - 1 && (roomsCount - indexMin) >= minRooms) {
 				for (j = 0; j <= i; j++) {
-					MapGenerator.FillArea(map, rooms[j]);
+					MapGenerator.FillArea(map, rooms[0]);
+					rooms.RemoveAt(0);
 				}
 			} else return false;
 		} else return false;
+		i = islands.Count-2; // Always leave the outermost group of walls.
+		if (i >= 0) {
+			do {
+				if (islands[i].Count <= minIslandArea) 
+					MapGenerator.FillArea(map, islands[i], TILE.FLOOR);
+			} while (--i >= 0);
+		}
 		return true;
 	}
 
@@ -140,8 +157,8 @@ public class GeneratorCellularAutomata : Generator {
 		int[,] mapFlags = new int[w, h];
 		for (int x = 0; x < w; x++) {
 			for (int y = 0; y < h; y++) {
-				if (map[x,y] != (int)TILE.WALL && inRooms(rooms, x, y)) continue;
-				HashSet<Vector2> room = GetRegion(x, y);
+				if (mapFlags[x,y] == 1) continue;
+				HashSet<Vector2> room = GetRegion(mapFlags, x, y);
 				if(room != null) rooms.Add(room);
 			}
 		}
@@ -151,7 +168,18 @@ public class GeneratorCellularAutomata : Generator {
 		return rooms;
 	}
 
-	private List<Vector2> GetRegionTiles(int startX, int startY) {
+	private List<HashSet<Vector2>> GetTypedRegions(List<HashSet<Vector2>> regions, TILE type) {
+		List<HashSet<Vector2>> typedRegion = new List<HashSet<Vector2>>();
+		foreach(HashSet<Vector2> region in regions) {
+			foreach(Vector2 v in region) {
+				if (this[v] == (int)type) typedRegion.Add(region);
+				break;
+			}
+		}
+		return typedRegion;
+	}
+
+		private List<Vector2> GetRegionTiles(int startX, int startY) {
 		List<Vector2> tiles = new List<Vector2>();
 		int[,] mapFlags = new int[w, h];
 		TILE tileType = (TILE)map[startX, startY];
@@ -178,36 +206,26 @@ public class GeneratorCellularAutomata : Generator {
 		return tiles;
 	}
 
-	private HashSet<Vector2> GetRegion(int x, int y) {
+	private HashSet<Vector2> GetRegion(int[,] mapFlags, int x, int y) {
 		TILE type = (TILE)map[x, y];
 		LinkedList<Vector2> currFlood = new LinkedList<Vector2>();
 		currFlood.AddFirst(new Vector2(x, y));
+		mapFlags[x, y] = 1;
 		LinkedListNode<Vector2> curr = currFlood.First;
 		while (curr != null) {
 			Vector2 val = curr.Value;
-			ConditionallyAddToList(currFlood, val.x, val.y + 1, type);
-			ConditionallyAddToList(currFlood, val.x, val.y - 1, type);
-			ConditionallyAddToList(currFlood, val.x + 1, val.y, type);
-			ConditionallyAddToList(currFlood, val.x - 1, val.y, type);
+			ConditionallyAddToList(currFlood, mapFlags, val.x, val.y + 1, type);
+			ConditionallyAddToList(currFlood, mapFlags, val.x, val.y - 1, type);
+			ConditionallyAddToList(currFlood, mapFlags, val.x + 1, val.y, type);
+			ConditionallyAddToList(currFlood, mapFlags, val.x - 1, val.y, type);
 			curr = curr.Next;
 		}
 		return new HashSet<Vector2>(currFlood);
 	}
 
-	private bool inRooms(List<HashSet<Vector2>> rooms, int x, int y) {
-		foreach (HashSet<Vector2> room in rooms) {
-			//if (room.Contains(new Vector2(x, y))) return true;
-			foreach (Vector2 coord in room)
-				if (x == coord.x && y == coord.y)
-					return true;
-		}
-		return false;
-	}
-
-	private void ConditionallyAddToList(LinkedList<Vector2> flood, float x, float y, TILE type) {
-		if (IsInMap((int)x, (int)y) && map[(int)x, (int)y] == (int)type) {// is in the map and the type that we're flooding
-			foreach (Vector2 v in flood) 
-				if (v.x == x && v.y == y) return; // is not already in the flood
+	private void ConditionallyAddToList(LinkedList<Vector2> flood, int[,] mapFlags, float x, float y, TILE type) {
+		if (IsInMap((int)x, (int)y) && map[(int)x, (int)y] == (int)type && mapFlags[(int)x,(int)y] == 0) {
+			mapFlags[(int)x, (int)y] = 1;
 			flood.AddLast(new Vector2(x, y)); // add it to the flood
 		}
 	}
@@ -218,6 +236,27 @@ public class GeneratorCellularAutomata : Generator {
 		maxWallCount = Mathf.Clamp(maxWallCount, minWallCount, (4 * wallCountSearchExpanse * (wallCountSearchExpanse + 1)));
 		wallCountSearchExpanse = Mathf.Clamp(wallCountSearchExpanse, 1, int.MaxValue);
 		minRooms = Mathf.Clamp(minRooms, 1, int.MaxValue);
+	}
+
+	class Room {
+		public List<Vector2> tiles;
+		public List<Vector2> edgeTiles;
+		public List<Room> connectedRooms;
+		public int roomSize;
+
+		public Room(List<Vector2> roomTiles, int[,] map) {
+			tiles = roomTiles;
+			roomSize = tiles.Count;
+			connectedRooms = new List<Room>();
+			edgeTiles = new List<Vector2>();
+			foreach(Vector2 tile in tiles) {
+				for(int x = (int)tile.x-1; x <= tile.x+1; x++) {
+					for (int y = (int)tile.y - 1; y <= tile.y + 1; y++) {
+						
+					}
+				}
+			}
+		}
 	}
 
 }

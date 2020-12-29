@@ -38,7 +38,7 @@ public class MapGenerator : MonoBehaviour {
 	public GENERATOR_TYPE generationType = GENERATOR_TYPE.CELLULAR_AUTOMATA;
 
 	//private vars
-	public static System.Random rand { get; private set; }
+	public System.Random rand { get; private set; }
 
 	private Generator generator;
 	private Screen screen;
@@ -48,7 +48,9 @@ public class MapGenerator : MonoBehaviour {
 	#region unity
 	void Start() {
 		map = new int[width, height];
-		rand = new System.Random(useRandomSeed ? Time.time.ToString().GetHashCode() : seed.GetHashCode());
+		rand = new System.Random(useRandomSeed 
+			? Time.time.ToString().GetHashCode() + this.GetHashCode() 
+			: seed.GetHashCode());
 		generator = GetComponentInChildren<GeneratorCellularAutomata>();
 		meshGen = GetComponent<MeshGenerator>();
 		GenerateMap(generationType);
@@ -56,8 +58,10 @@ public class MapGenerator : MonoBehaviour {
 
 	void Update() {
 		Mouse mouse = Mouse.current;
-		if (mouse == null) return;
-		if (mouse.leftButton.wasReleasedThisFrame) {
+		Keyboard keyboard = Keyboard.current;
+		if (mouse == null || keyboard == null) return;
+		if ((mouse.leftButton.wasReleasedThisFrame && mouse.rightButton.isPressed) || 
+			(mouse.leftButton.isPressed && mouse.rightButton.wasReleasedThisFrame)) {
 			GenerateMap(generationType);
 		}
 	}
@@ -104,7 +108,7 @@ public class MapGenerator : MonoBehaviour {
 			m[(int)v.x, (int)v.y] = (int)tileType;
 	}
 
-	public static void CreateHall(int[,] m, Rect r1, Rect r2) {
+	public void CreateHall(int[,] m, Rect r1, Rect r2) {
 		Vector2 newCenter = r1.center;
 		Vector2 prevCenter = r2.center;
 		if (rand.Next(1) == 1) {
@@ -160,8 +164,8 @@ public class MapGenerator : MonoBehaviour {
 		}
 	}
 
-	public static TILE floorOrWall(int x = 0, int y = 0, float percent = 0.5f) {
-		return MapGenerator.rand.NextDouble() < percent ? TILE.FLOOR : TILE.WALL;
+	public TILE floorOrWall(int x = 0, int y = 0, float percent = 0.5f) {
+		return rand.NextDouble() < percent ? TILE.FLOOR : TILE.WALL;
 	}
 
 	public delegate TILE Del(int x = 0, int y = 0, float percent = 0.5f);

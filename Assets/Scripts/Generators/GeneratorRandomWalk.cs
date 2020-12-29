@@ -37,8 +37,8 @@ public class GeneratorRandomWalk : Generator {
 		String prevDirection = null, direction = null;
 
 		int dx = 0, dy = 0;
-		int drunkardX = MapGenerator.rand.Next(2, w - 2);
-		int drunkardY = MapGenerator.rand.Next(2, h - 2);
+		int drunkardX = mapGen.rand.Next(2, w - 2);
+		int drunkardY = mapGen.rand.Next(2, h - 2);
 		long filledGoal = (int)(h * w * percentGoal);
 		double n, s, we, e, aim;
 
@@ -70,7 +70,7 @@ public class GeneratorRandomWalk : Generator {
 			e /= total;
 			we /= total;
 
-			aim = MapGenerator.rand.NextDouble();
+			aim = mapGen.rand.NextDouble();
 			if (aim < n) {
 				dx = 0;
 				dy = -1;
