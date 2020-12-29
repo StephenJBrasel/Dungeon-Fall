@@ -99,7 +99,7 @@ public class GeneratorCellularAutomata : Generator {
 		int wallCount = 0;
 		for (int neighborX = x - offset; neighborX <= x + offset; neighborX++) {
 			for (int neighborY = y - offset; neighborY <= y + offset; neighborY++) {
-				if (neighborX >= 0 && neighborX < w && neighborY >= 0 && neighborY < h) {
+				if (IsInMap(neighborX, neighborY)) {
 					if (neighborX != x || neighborY != y) {
 						wallCount += map[neighborX, neighborY] == (int)TILE.WALL ? 1 : 0;
 					}
@@ -111,35 +111,19 @@ public class GeneratorCellularAutomata : Generator {
 		return wallCount;
 	}
 
-	private bool FloodFill() {
-		List<HashSet<Vector2>> rooms = new List<HashSet<Vector2>>();
-		int indexOfLargest = 0;
+	private bool IsInMap(int x, int y) {
+		return x >= 0 && x < w && y >= 0 && y < h;
+	}
 
-		for (int x = 0; x < w; x++) {
-			for (int y = 0; y < h; y++) {
-				if (map[x, y] == (int)TILE.WALL || inRooms(rooms, x, y)) continue;
-				LinkedList<Vector2> currFlood = new LinkedList<Vector2>();
-				currFlood.AddFirst(new Vector2(x, y));
-				LinkedListNode<Vector2> curr = currFlood.First;
-				while (curr != null) {
-					Vector2 val = curr.Value;
-					ConditionallyAddToList(currFlood, new Vector2(val.x, val.y + 1));
-					ConditionallyAddToList(currFlood, new Vector2(val.x, val.y - 1));
-					ConditionallyAddToList(currFlood, new Vector2(val.x + 1, val.y));
-					ConditionallyAddToList(currFlood, new Vector2(val.x - 1, val.y));
-					curr = curr.Next;
-				}
-				rooms.Add(new HashSet<Vector2>(currFlood));
-				if (rooms[indexOfLargest].Count < rooms[rooms.Count - 1].Count)
-					indexOfLargest = rooms.Count - 1;
-			}
-		}
-		rooms.Sort(delegate (HashSet<Vector2> r1, HashSet<Vector2> r2) {
-			return r1.Count.CompareTo(r2.Count);
-		});
+	private bool IsInMap(Vector2 v) {
+		return IsInMap((int)v.x, (int)v.y);
+	}
+
+	private bool FloodFill() {
+		List<HashSet<Vector2>> rooms = GetRegions();
 		if (rooms.Count >= minRooms) {
 			int i, j, indexMin, roomsCount = rooms.Count;
-			for (i = roomsCount - 1; i >= 0; i--) 
+			for (i = roomsCount - 1; i >= 0; i--)
 				if (rooms[i].Count < minArea) break;
 			indexMin = Math.Max(0, i);
 			if (indexMin < roomsCount - 1 && (roomsCount - indexMin) >= minRooms) {
@@ -149,6 +133,65 @@ public class GeneratorCellularAutomata : Generator {
 			} else return false;
 		} else return false;
 		return true;
+	}
+
+	private List<HashSet<Vector2>> GetRegions() {
+		List<HashSet<Vector2>> rooms = new List<HashSet<Vector2>>();
+		int[,] mapFlags = new int[w, h];
+		for (int x = 0; x < w; x++) {
+			for (int y = 0; y < h; y++) {
+				if (map[x,y] != (int)TILE.WALL && inRooms(rooms, x, y)) continue;
+				HashSet<Vector2> room = GetRegion(x, y);
+				if(room != null) rooms.Add(room);
+			}
+		}
+		rooms.Sort(delegate (HashSet<Vector2> r1, HashSet<Vector2> r2) {
+			return r1.Count.CompareTo(r2.Count);
+		});
+		return rooms;
+	}
+
+	private List<Vector2> GetRegionTiles(int startX, int startY) {
+		List<Vector2> tiles = new List<Vector2>();
+		int[,] mapFlags = new int[w, h];
+		TILE tileType = (TILE)map[startX, startY];
+
+		Queue<Vector2> queue = new Queue<Vector2>();
+		queue.Enqueue(new Vector2(startX, startY));
+		mapFlags[startX, startY] = 1;
+
+		while(queue.Count > 0) {
+			Vector2 tile = queue.Dequeue();
+			tiles.Add(tile);
+
+			for (int x = (int)tile.x - 1; x < (int)tile.x + 1; x++) {
+				for (int y = (int)tile.y - 1; y < (int)tile.y + 1; y++) { 
+					if(IsInMap(x,y) && x == tile.x || y == tile.y) {
+						if(mapFlags[x, y] == 0 && map[x,y] == (int)tileType){
+							mapFlags[x, y] = 1;
+							queue.Enqueue(new Vector2(x, y));
+						}
+					}
+				}
+			}
+		}
+		return tiles;
+	}
+
+	private HashSet<Vector2> GetRegion(int x, int y) {
+		TILE type = (TILE)map[x, y];
+		LinkedList<Vector2> currFlood = new LinkedList<Vector2>();
+		currFlood.AddFirst(new Vector2(x, y));
+		LinkedListNode<Vector2> curr = currFlood.First;
+		while (curr != null) {
+			Vector2 val = curr.Value;
+			ConditionallyAddToList(currFlood, val.x, val.y + 1, type);
+			ConditionallyAddToList(currFlood, val.x, val.y - 1, type);
+			ConditionallyAddToList(currFlood, val.x + 1, val.y, type);
+			ConditionallyAddToList(currFlood, val.x - 1, val.y, type);
+			curr = curr.Next;
+		}
+		return new HashSet<Vector2>(currFlood);
 	}
 
 	private bool inRooms(List<HashSet<Vector2>> rooms, int x, int y) {
@@ -161,14 +204,11 @@ public class GeneratorCellularAutomata : Generator {
 		return false;
 	}
 
-	private void ConditionallyAddToList(LinkedList<Vector2> flood, Vector2 coord) {
-		if (coord.x >= 0 && coord.x < w && coord.y >= 0 && coord.y < h) { // in the map
-			if (map[(int)coord.x, (int)coord.y] == (int)TILE.FLOOR) {// is a floor
-				foreach (Vector2 v in flood) {
-					if (v.x == coord.x && v.y == coord.y) return; // is not already in the flood
-				}
-				flood.AddLast(coord); // add it to the flood
-			}
+	private void ConditionallyAddToList(LinkedList<Vector2> flood, float x, float y, TILE type) {
+		if (IsInMap((int)x, (int)y) && map[(int)x, (int)y] == (int)type) {// is in the map and the type that we're flooding
+			foreach (Vector2 v in flood) 
+				if (v.x == x && v.y == y) return; // is not already in the flood
+			flood.AddLast(new Vector2(x, y)); // add it to the flood
 		}
 	}
 

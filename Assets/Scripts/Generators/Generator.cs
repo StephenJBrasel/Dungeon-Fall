@@ -25,4 +25,9 @@ public abstract class Generator : MonoBehaviour {
 
 	protected abstract void build();
 	public abstract GENERATOR_TYPE getType();
+	public int this[Vector2 v] {
+		get {
+			return map[(int)v.x, (int)v.y];
+		}
+	}
 }
