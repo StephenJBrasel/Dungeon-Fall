@@ -18,6 +18,10 @@ public class GeneratorBSPTree : Generator {
 	}
 	// hi! 
 
+	public override Vector2 getStartPoint() {
+		throw new NotImplementedException();
+	}
+
 	#region bsptree
 	private void BSPAlgorithm() {
 		LinkedList<Leaf> leaves = new LinkedList<Leaf>();
@@ -53,7 +57,7 @@ public class GeneratorBSPTree : Generator {
 				if (leaf.childRight != null) CreateRooms(leaf.childRight);
 				if (leaf.childLeft != null && leaf.childRight != null) {
 					if (leaf.childLeft.getRoom() != null && leaf.childRight.getRoom() != null) {
-						mapGen.CreateHall(map, leaf.childLeft.getRoom().getRect(), leaf.childRight.getRoom().getRect());
+						mapGen.CreateHall(map, leaf.childLeft.getRoom().getRect().center, leaf.childRight.getRoom().getRect().center, "L-Hall");
 					}
 				}
 			} else {

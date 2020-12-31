@@ -10,4 +10,8 @@ public class GeneratorCityBuildings : Generator {
 	public override GENERATOR_TYPE getType() {
 		return GENERATOR_TYPE.CITY_BUILDINGS;
 	}
+
+	public override Vector2 getStartPoint() {
+		throw new System.NotImplementedException();
+	}
 }

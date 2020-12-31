@@ -14,6 +14,10 @@ public class GeneratorTunneling : Generator {
 		return GENERATOR_TYPE.TUNNELING;
 	}
 
+	public override Vector2 getStartPoint() {
+		throw new System.NotImplementedException();
+	}
+
 	private void TunnelingAlgorithm() {
 		ArrayList rooms = new ArrayList(maxRooms);
 
@@ -21,7 +25,7 @@ public class GeneratorTunneling : Generator {
 			int width, height;
 			width = mapGen.rand.Next(roomMinSize, roomMaxSize);
 			height = mapGen.rand.Next(roomMinSize, roomMaxSize);
-			//if (mapGen.rand.Next(1) == 0) {
+			//if (mapGen.rand.Next() % 2 == 0) {
 			//	width = mapGen.rand.Next(roomMinSize, roomMaxSize);
 			//	height = width + mapGen.rand.Next(-(int)Mathf.Log(width), (int)Mathf.Log(width));
 			//} else {
@@ -37,7 +41,7 @@ public class GeneratorTunneling : Generator {
 			if (j >= rooms.Count) {
 				MapGenerator.FillArea(map, newRoom, TILE.FLOOR);
 				if (rooms.Count != 0) {
-					mapGen.CreateHall(map, newRoom, (Rect)rooms[rooms.Count - 1]);
+					mapGen.CreateHall(map, newRoom.center, ((Rect)rooms[rooms.Count - 1]).center, "L-Hall");
 				}
 				rooms.Add(newRoom);
 			}
@@ -49,5 +53,9 @@ public class GeneratorTunneling : Generator {
 		roomMaxSize = Mathf.Clamp(roomMaxSize, roomMinSize, int.MaxValue);
 		roomMinSize = Mathf.Clamp(roomMinSize, 1, roomMaxSize);
 		maxRooms = Mathf.Clamp(maxRooms, 1, int.MaxValue);
+	}
+
+	public override Vector2 getStartPoint() {
+		throw new System.NotImplementedException();
 	}
 }

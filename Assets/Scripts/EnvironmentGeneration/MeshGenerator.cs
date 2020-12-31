@@ -7,6 +7,9 @@ public class MeshGenerator : MonoBehaviour {
 
     public SquareGrid squareGrid;
     public MeshFilter walls;
+    public MeshFilter cave;
+    public GameObject ground;
+    public bool is2D;
     List<Vector3> vertices;
     List<int> triangles;
 
@@ -32,13 +35,17 @@ public class MeshGenerator : MonoBehaviour {
         }
 
         Mesh mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
+        cave.mesh = mesh;
 
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
         mesh.RecalculateNormals();
 
-        CreateWallMesh();
+        if (!is2D) {
+            CreateWallMesh();
+            MapGenerator mapGen = GetComponentInParent<MapGenerator>();
+            ground.transform.localScale = new Vector3(mapGen.meshUnitSize * mapGen.width/10, 1, mapGen.meshUnitSize * mapGen.height/10);
+        }
     }
 
     void CreateWallMesh() {
@@ -72,6 +79,8 @@ public class MeshGenerator : MonoBehaviour {
         wallMesh.triangles = wallTriangles.ToArray();
 
         walls.mesh = wallMesh;
+        MeshCollider wallCollider = walls.gameObject.AddComponent<MeshCollider>();
+        wallCollider.sharedMesh = wallMesh;
 	}
 
     void TriangulateSquare(Square square) {

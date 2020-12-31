@@ -77,7 +77,7 @@ public class Leaf {
 		if (childLeft != null || childRight != null)
 			return false; // this leaf has already been split
 
-		bool splitHorizontally = rand.Next(1) == 0;
+		bool splitHorizontally = rand.Next() % 2 == 0;
 		if (width / height >= 1.25f)
 			splitHorizontally = false;
 		else if (height / width >= 1.25f)

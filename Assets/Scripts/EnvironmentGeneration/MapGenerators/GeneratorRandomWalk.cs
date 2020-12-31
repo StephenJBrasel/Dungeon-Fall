@@ -30,6 +30,10 @@ public class GeneratorRandomWalk : Generator {
 		return GENERATOR_TYPE.RANDOM_WALK;
 	}
 
+	public override Vector2 getStartPoint() {
+		throw new NotImplementedException();
+	}
+
 
 	private void RandomWalkAlgorithm() {
 		walkIterations = Math.Max(walkIterations, w * h * 10);

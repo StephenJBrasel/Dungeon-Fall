@@ -124,6 +124,10 @@ public class GeneratorCellularAutomata : Generator {
 		return IsInMap((int)v.x, (int)v.y);
 	}
 
+	public override Vector2 getStartPoint() {
+		throw new NotImplementedException();
+	}
+
 	private bool CleanMap() {
 		List<HashSet<Vector2>> regions = GetRegions();
 		List<HashSet<Vector2>> rooms = GetTypedRegions(regions, TILE.FLOOR);
@@ -140,16 +144,101 @@ public class GeneratorCellularAutomata : Generator {
 					MapGenerator.FillArea(map, rooms[0]);
 					rooms.RemoveAt(0);
 				}
+				List<Room> survivingRooms = new List<Room>();
+				for(j = 0; j < rooms.Count; j++) {
+					survivingRooms.Add(new Room(rooms[j], map));
+				}
+				survivingRooms.Sort();
+				survivingRooms[0].isMainRoom = true;
+				survivingRooms[0].isAccessibleFromMainRoom = true;
+
+				ConnectClosestRooms(survivingRooms);
 			} else return false;
 		} else return false;
 		i = islands.Count-2; // Always leave the outermost group of walls.
 		if (i >= 0) {
 			do {
-				if (islands[i].Count <= minIslandArea) 
+				if (islands[i].Count <= minIslandArea)
 					MapGenerator.FillArea(map, islands[i], TILE.FLOOR);
 			} while (--i >= 0);
 		}
 		return true;
+	}
+
+	void ConnectClosestRooms(List<Room> allRooms, bool forceAccessibilityFromMainRoom = false) {
+
+		List<Room> roomListA = new List<Room>();
+		List<Room> roomListB = new List<Room>();
+
+		if (forceAccessibilityFromMainRoom) {
+			foreach (Room r in allRooms) {
+				if (r.isAccessibleFromMainRoom) {
+					roomListB.Add(r);
+				} else {
+					roomListA.Add(r);
+				}
+			}
+		} else {
+			roomListA = allRooms;
+			roomListB = allRooms;
+		}
+
+		int bestDistance = int.MaxValue;
+		Vector2 bestTileA = new Vector2();
+		Vector2 bestTileB = new Vector2();
+		Room bestRoomA = new Room();
+		Room bestRoomB = new Room();
+		bool possibleConnectionFound = false;
+		foreach (Room roomA in roomListA) {
+			if (!forceAccessibilityFromMainRoom) {
+				possibleConnectionFound = false;
+				if(roomA.connectedRooms.Count > 0) {
+					continue;
+				}
+			}
+
+			foreach (Room roomB in roomListB) {
+
+				if (roomA == roomB || roomA.isConnected(roomB)) {
+					continue;
+				}
+
+				foreach(Vector2 tileA in roomA.edgeTiles) {
+					foreach (Vector2 tileB in roomB.edgeTiles) {
+						int distanceBetweenRooms = (int)(Mathf.Pow(tileA.x - tileB.x, 2f) + Mathf.Pow(tileA.y - tileB.y, 2f));
+						if(distanceBetweenRooms < bestDistance || !possibleConnectionFound) {
+							bestDistance = distanceBetweenRooms;
+							possibleConnectionFound = true;
+							bestTileA = tileA;
+							bestTileB = tileB;
+							bestRoomA = roomA;
+							bestRoomB = roomB;
+						}
+					}
+				}
+			}
+			if (possibleConnectionFound && !forceAccessibilityFromMainRoom) {
+				CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB);
+			}
+		}
+		if (possibleConnectionFound && forceAccessibilityFromMainRoom) {
+			CreatePassage(bestRoomA, bestRoomB, bestTileA, bestTileB);
+			ConnectClosestRooms(allRooms, true);
+		}
+
+		if (!forceAccessibilityFromMainRoom) {
+			ConnectClosestRooms(allRooms, true);
+		}
+
+	}
+
+	private void CreatePassage(Room roomA, Room roomB, Vector2 tileA, Vector2 tileB) {
+		Room.ConnectRooms(roomA, roomB);
+		mapGen.CreateHall(map, tileA, tileB, "dottedLine");
+	}
+
+	Vector3 Vector2ToWorldPoint(Vector2 v) {
+		return new Vector3(-w / 2 + 0.5f + v.x, 2, -h / 2 + 0.5f + v.y);
 	}
 
 	private List<HashSet<Vector2>> GetRegions() {
@@ -177,33 +266,6 @@ public class GeneratorCellularAutomata : Generator {
 			}
 		}
 		return typedRegion;
-	}
-
-		private List<Vector2> GetRegionTiles(int startX, int startY) {
-		List<Vector2> tiles = new List<Vector2>();
-		int[,] mapFlags = new int[w, h];
-		TILE tileType = (TILE)map[startX, startY];
-
-		Queue<Vector2> queue = new Queue<Vector2>();
-		queue.Enqueue(new Vector2(startX, startY));
-		mapFlags[startX, startY] = 1;
-
-		while(queue.Count > 0) {
-			Vector2 tile = queue.Dequeue();
-			tiles.Add(tile);
-
-			for (int x = (int)tile.x - 1; x < (int)tile.x + 1; x++) {
-				for (int y = (int)tile.y - 1; y < (int)tile.y + 1; y++) { 
-					if(IsInMap(x,y) && x == tile.x || y == tile.y) {
-						if(mapFlags[x, y] == 0 && map[x,y] == (int)tileType){
-							mapFlags[x, y] = 1;
-							queue.Enqueue(new Vector2(x, y));
-						}
-					}
-				}
-			}
-		}
-		return tiles;
 	}
 
 	private HashSet<Vector2> GetRegion(int[,] mapFlags, int x, int y) {
@@ -237,26 +299,4 @@ public class GeneratorCellularAutomata : Generator {
 		wallCountSearchExpanse = Mathf.Clamp(wallCountSearchExpanse, 1, int.MaxValue);
 		minRooms = Mathf.Clamp(minRooms, 1, int.MaxValue);
 	}
-
-	class Room {
-		public List<Vector2> tiles;
-		public List<Vector2> edgeTiles;
-		public List<Room> connectedRooms;
-		public int roomSize;
-
-		public Room(List<Vector2> roomTiles, int[,] map) {
-			tiles = roomTiles;
-			roomSize = tiles.Count;
-			connectedRooms = new List<Room>();
-			edgeTiles = new List<Vector2>();
-			foreach(Vector2 tile in tiles) {
-				for(int x = (int)tile.x-1; x <= tile.x+1; x++) {
-					for (int y = (int)tile.y - 1; y <= tile.y + 1; y++) {
-						
-					}
-				}
-			}
-		}
-	}
-
 }

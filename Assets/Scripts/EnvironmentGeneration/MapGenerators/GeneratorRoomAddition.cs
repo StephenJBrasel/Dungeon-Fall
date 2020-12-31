@@ -43,6 +43,10 @@ public class GeneratorRoomAddition : Generator {
 		return GENERATOR_TYPE.ROOM_ADDITION;
 	}
 
+	public override Vector2 getStartPoint() {
+		throw new NotImplementedException();
+	}
+
 	private void RoomAddition() {
 		rooms = new ArrayList(maxNumRooms);
 		int[,] room = generateRoom();
@@ -121,10 +125,10 @@ public class GeneratorRoomAddition : Generator {
 		int[,] room = new int[HorizontalWidth, VerticalHeight];
 		MapGenerator.FillArea(room, new Rect(0, 0, room.GetLength(0), room.GetLength(1)), TILE.WALL);
 
-		int VerticalOffset = (int)(VerticalHeight / 2 - HorizontalHeight / 2);
+		int VerticalOffset = (VerticalHeight / 2 - HorizontalHeight / 2);
 		MapGenerator.FillArea(room, new Rect(0, VerticalOffset, HorizontalWidth, HorizontalHeight), TILE.FLOOR);
 
-		int HorizontalOffset = (int)(HorizontalWidth / 2 - VerticalWidth / 2);
+		int HorizontalOffset = (HorizontalWidth / 2 - VerticalWidth / 2);
 		MapGenerator.FillArea(room, new Rect(HorizontalOffset, 0, VerticalWidth, VerticalHeight), TILE.FLOOR);
 
 		return room;

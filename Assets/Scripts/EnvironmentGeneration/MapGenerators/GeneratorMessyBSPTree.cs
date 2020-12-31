@@ -12,4 +12,8 @@ public class GeneratorMessyBSPTree : Generator {
 		return GENERATOR_TYPE.MESSY_BSPTREE;
 	}
 
+	public override Vector2 getStartPoint() {
+		throw new System.NotImplementedException();
+	}
+
 }
