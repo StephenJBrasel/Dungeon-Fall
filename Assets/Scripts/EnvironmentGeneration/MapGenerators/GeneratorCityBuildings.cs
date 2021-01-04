@@ -11,7 +11,4 @@ public class GeneratorCityBuildings : Generator {
 		return GENERATOR_TYPE.CITY_BUILDINGS;
 	}
 
-	public override Vector2 getStartPoint() {
-		throw new System.NotImplementedException();
-	}
 }

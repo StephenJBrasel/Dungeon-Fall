@@ -10,7 +10,4 @@ public class GeneratorRoomyMaze : Generator {
 		return GENERATOR_TYPE.ROOMY_MAZE;
 	}
 
-	public override Vector2 getStartPoint() {
-		throw new System.NotImplementedException();
-	}
 }

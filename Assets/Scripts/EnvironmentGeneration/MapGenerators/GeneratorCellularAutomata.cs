@@ -60,7 +60,7 @@ public class GeneratorCellularAutomata : Generator {
 			MapGenerator.CreateContainer(map, new Rect(0, 0, w, h), mapGen.floorOrWall, (float)randomFillPercent);
 			// Smooth the map
 			for (int i = 0; i < numSmoothIterations; i++)
-				SmoothMap();
+				SmoothArea(new int[] { 0, 0, w-1, h-1}, minWallCount, maxWallCount, wallCountSearchExpanse, floorTile, wallTile);
 			// Floodfill Smaller areas
 			if (willCleanMap){
 				if(++eliminateSmallRoomsAttempts >= cleanMapMaxAttemptCount) {
@@ -79,54 +79,37 @@ public class GeneratorCellularAutomata : Generator {
 		minRooms = originalminRooms;
 	}
 
-	private void SmoothMap() {
+	public TILE floorTile() {
+		return TILE.FLOOR;
+	}
+	public TILE wallTile() {
+		return TILE.WALL;
+	}
+
+	private void SmoothArea(int[] border, int minNumType2, int maxNumType2, int neighborSearchRadius, tileDel type1, tileDel type2) {
 		int[,] next = new int[w, h];
-		for (int x = 0; x < w; x++) {
-			for (int y = 0; y < h; y++) {
-				if (x == 0 || x == w - 1 || y == 0 || y == h - 1) {
-					next[x, y] = (int)TILE.WALL;
+		for (int x = border[0]; x <= border[2]; x++) {
+			for (int y = border[1]; y <= border[3]; y++) {
+				if (x == border[0] || x == border[2] || y == border[1] || y == border[3]) {
+					next[x, y] = (int)type2();
 					continue;
 				}
-				int neighborWallTiles = GetSurroundingWallCount(x, y, wallCountSearchExpanse);
-				if (neighborWallTiles < minWallCount) {
-					next[x, y] = (int)TILE.FLOOR;
-				} else if (neighborWallTiles > maxWallCount) {
-					next[x, y] = (int)TILE.WALL;
+				int neighborWallTiles = neighborCount(x, y, neighborSearchRadius);
+				if (neighborWallTiles < minNumType2) {
+					next[x, y] = (int)type1();
+				} else if (neighborWallTiles > maxNumType2) {
+					next[x, y] = (int)type2();
 				}
 			}
 		}
 		map = next;
 	}
 
-	//TODO: Optimize to use 4 double four loops (?) to avoid the self-check (neighborX != x || neighborY != y).
-	// Returns a number between 0 and wallCountSearcHExpanse*2
-	private int GetSurroundingWallCount(int x, int y, int offset = 1) {
-		int wallCount = 0;
-		for (int neighborX = x - offset; neighborX <= x + offset; neighborX++) {
-			for (int neighborY = y - offset; neighborY <= y + offset; neighborY++) {
-				if (IsInMap(neighborX, neighborY)) {
-					if (neighborX != x || neighborY != y) {
-						wallCount += map[neighborX, neighborY] == (int)TILE.WALL ? 1 : 0;
-					}
-				} else {
-					wallCount++;
-				}
-			}
-		}
-		return wallCount;
-	}
+	public delegate TILE tileDel();
 
-	private bool IsInMap(int x, int y) {
-		return x >= 0 && x < w && y >= 0 && y < h;
-	}
-
-	private bool IsInMap(Vector2 v) {
-		return IsInMap((int)v.x, (int)v.y);
-	}
-
-	public override Vector2 getStartPoint() {
-		throw new NotImplementedException();
-	}
+	//private bool IsInMap(Vector2 v) {
+	//	return IsInMap((int)v.x, (int)v.y);
+	//}
 
 	private bool CleanMap() {
 		List<HashSet<Vector2>> regions = GetRegions();
@@ -144,15 +127,14 @@ public class GeneratorCellularAutomata : Generator {
 					MapGenerator.FillArea(map, rooms[0]);
 					rooms.RemoveAt(0);
 				}
-				List<Room> survivingRooms = new List<Room>();
+				List<Room> finalRooms = new List<Room>();
 				for(j = 0; j < rooms.Count; j++) {
-					survivingRooms.Add(new Room(rooms[j], map));
+					finalRooms.Add(new Room(map, rooms[j]));
 				}
-				survivingRooms.Sort();
-				survivingRooms[0].isMainRoom = true;
-				survivingRooms[0].isAccessibleFromMainRoom = true;
+				finalRooms.Sort();
+				finalRooms[0].setAccessibleFromHub();
 
-				ConnectClosestRooms(survivingRooms);
+				ConnectClosestRooms(finalRooms);
 			} else return false;
 		} else return false;
 		i = islands.Count-2; // Always leave the outermost group of walls.
@@ -172,7 +154,7 @@ public class GeneratorCellularAutomata : Generator {
 
 		if (forceAccessibilityFromMainRoom) {
 			foreach (Room r in allRooms) {
-				if (r.isAccessibleFromMainRoom) {
+				if (r.isAccessibleFromHub) {
 					roomListB.Add(r);
 				} else {
 					roomListA.Add(r);
@@ -192,7 +174,7 @@ public class GeneratorCellularAutomata : Generator {
 		foreach (Room roomA in roomListA) {
 			if (!forceAccessibilityFromMainRoom) {
 				possibleConnectionFound = false;
-				if(roomA.connectedRooms.Count > 0) {
+				if(roomA.connectedRoomCount > 0) {
 					continue;
 				}
 			}
@@ -235,10 +217,6 @@ public class GeneratorCellularAutomata : Generator {
 	private void CreatePassage(Room roomA, Room roomB, Vector2 tileA, Vector2 tileB) {
 		Room.ConnectRooms(roomA, roomB);
 		mapGen.CreateHall(map, tileA, tileB, "dottedLine");
-	}
-
-	Vector3 Vector2ToWorldPoint(Vector2 v) {
-		return new Vector3(-w / 2 + 0.5f + v.x, 2, -h / 2 + 0.5f + v.y);
 	}
 
 	private List<HashSet<Vector2>> GetRegions() {

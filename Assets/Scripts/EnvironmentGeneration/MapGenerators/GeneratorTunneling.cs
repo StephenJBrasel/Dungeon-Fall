@@ -14,10 +14,6 @@ public class GeneratorTunneling : Generator {
 		return GENERATOR_TYPE.TUNNELING;
 	}
 
-	public override Vector2 getStartPoint() {
-		throw new System.NotImplementedException();
-	}
-
 	private void TunnelingAlgorithm() {
 		ArrayList rooms = new ArrayList(maxRooms);
 
@@ -55,7 +51,4 @@ public class GeneratorTunneling : Generator {
 		maxRooms = Mathf.Clamp(maxRooms, 1, int.MaxValue);
 	}
 
-	public override Vector2 getStartPoint() {
-		throw new System.NotImplementedException();
-	}
 }

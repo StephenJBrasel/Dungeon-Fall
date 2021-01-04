@@ -9,17 +9,12 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Player player;
     [SerializeField]
-    private Camera camera;
+    private new Camera camera;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        int[,] map = mapGenerator.map;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+	public void ResetPlayer() {
+		Vector2 start = mapGenerator.generator.getPlacementFloorTile();
+        float radius = player.GetComponent<SphereCollider>().radius;
+		player.GetComponent<Rigidbody>().position = new Vector3(start.x + radius, -5f + radius, start.y + radius);
+		camera.transform.SetPositionAndRotation(new Vector3(start.x, 35f, start.y), Quaternion.LookRotation(Vector3.down, Vector3.forward));
+	}
 }

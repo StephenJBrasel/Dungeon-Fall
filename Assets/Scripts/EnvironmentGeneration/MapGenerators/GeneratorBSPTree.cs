@@ -18,9 +18,6 @@ public class GeneratorBSPTree : Generator {
 	}
 	// hi! 
 
-	public override Vector2 getStartPoint() {
-		throw new NotImplementedException();
-	}
 
 	#region bsptree
 	private void BSPAlgorithm() {

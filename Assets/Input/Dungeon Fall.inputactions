@@ -28,6 +28,22 @@
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": ""
+                },
+                {
+                    "name": "NextMap",
+                    "type": "Button",
+                    "id": "1f0774d9-75c7-4846-9557-69b4fb59db4c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": ""
+                },
+                {
+                    "name": "Zoom",
+                    "type": "Value",
+                    "id": "1dbcc17b-db64-4681-a17a-47b8c5f1b0ce",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": ""
                 }
             ],
             "bindings": [
@@ -250,6 +266,182 @@
                     "action": "Fire",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "Left Hold and Right [Mouse]",
+                    "id": "f2113dde-10a0-45f1-b58c-1a1e8b0d18ea",
+                    "path": "ButtonWithOneModifier",
+                    "interactions": "Press(behavior=1)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "5da662c6-36c4-40e4-b03c-317a13c71c3c",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "button",
+                    "id": "35aa9161-4706-4d73-bfbb-ea4bcf16772e",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Right Hold and Left [Mouse]",
+                    "id": "502944b1-627f-422b-a775-140c63f08ed8",
+                    "path": "ButtonWithOneModifier",
+                    "interactions": "Press(behavior=1)",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "8eb08b96-6db2-4043-a98e-e6698834ea6e",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "button",
+                    "id": "a247ed3e-c8e3-42af-9f9d-47cc04a1a68f",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Shift Right and Left [Mouse]",
+                    "id": "957f1e75-a509-4f50-a4ea-d17cb17750a7",
+                    "path": "ButtonWithTwoModifiers",
+                    "interactions": "Hold",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier1",
+                    "id": "d620af0e-c3da-4ee0-90e1-e52ba5b68100",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "modifier2",
+                    "id": "3943c13a-521a-4d98-ae5c-fbabf725b51a",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "button",
+                    "id": "ac597172-fb9b-4fa9-9447-0d1dac6f10db",
+                    "path": "<Keyboard>/shift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "NextMap",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "90bb54b0-eaa4-4758-980b-8050ae4ef7ae",
+                    "path": "<Mouse>/scroll",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "2D Vector",
+                    "id": "20f03ae5-89c2-47ac-92ee-f4f34675a85e",
+                    "path": "2DVector",
+                    "interactions": "Hold",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Zoom",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "up",
+                    "id": "19b75426-bbe5-471a-a8db-7e9f67a36623",
+                    "path": "<Touchscreen>/touch0/position/y",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "down",
+                    "id": "70fef294-0d2b-4aff-9eba-9adb53590150",
+                    "path": "<Touchscreen>/touch1/position/y",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "left",
+                    "id": "7e900084-7171-4f52-9ff1-a58fb8d85bcf",
+                    "path": "<Touchscreen>/touch0/position/x",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "right",
+                    "id": "7a0919fc-3019-4159-b1b6-a299bb603afd",
+                    "path": "<Touchscreen>/touch1/position/x",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Touch",
+                    "action": "Zoom",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         },

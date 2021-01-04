@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
 public enum TILE {
@@ -38,14 +39,19 @@ public class MapGenerator : MonoBehaviour {
 	[Header("Generator Settings")]
 	public GENERATOR_TYPE generationType = GENERATOR_TYPE.CELLULAR_AUTOMATA;
 
+	public UnityEvent generateMapEvent;
 	//private vars
+	[HideInInspector]
 	public Noise rand { get; private set; }
+	[HideInInspector]
+	public Generator generator { get; private set; }
 
-	private Generator generator;
-
-	private Screen screen;
+	//private Screen screen;
+	[HideInInspector]
 	public int[,] map { get; private set; }
 	private MeshGenerator meshGen;
+	private List<long> maps = new List<long>();
+	private int listIndex = 0;
 
 	#region unity
 	void Start() {
@@ -53,14 +59,36 @@ public class MapGenerator : MonoBehaviour {
 		rand = new Noise((uint)(useRandomSeed
 			? Time.time.ToString().GetHashCode() + this.GetHashCode()
 			: seed.GetHashCode()));
-
+		if (generateMapEvent == null)
+			generateMapEvent = new UnityEvent();
 		Generator[] generators = GetComponentsInChildren<Generator>();
-		foreach (Generator g in generators) 
+		foreach (Generator g in generators)
 			g.mapGen = this;
 
 		generator = GetComponentInChildren<GeneratorCellularAutomata>();
 		meshGen = GetComponent<MeshGenerator>();
-		GenerateMap(generationType);
+		Next();
+	}
+
+	private int[,] Next() {
+		if (++listIndex > maps.Count - 1) {
+			maps.Add(rand.position);
+			listIndex = maps.Count - 1;
+		}
+		return this[listIndex];
+	}
+
+	private int[,] Prev() {
+		listIndex = Math.Max(Math.Min(--listIndex, maps.Count - 2), 0);
+		return this[listIndex];
+	}
+
+	public int[,] this[int i] {
+		get {
+			rand.position = maps[i];
+			GenerateMap(generationType);
+			return map;
+		}
 	}
 
 	void Update() {
@@ -70,7 +98,10 @@ public class MapGenerator : MonoBehaviour {
 		if ((mouse.leftButton.wasReleasedThisFrame && mouse.rightButton.isPressed) || 
 			(mouse.leftButton.isPressed && mouse.rightButton.wasReleasedThisFrame) || 
 			(keyboard.shiftKey.isPressed && mouse.leftButton.isPressed && mouse.rightButton.isPressed)) {
-			GenerateMap(generationType);
+			Next();
+		}
+		else if (keyboard.backspaceKey.wasReleasedThisFrame) {
+			Prev();
 		}
 	}
 
@@ -82,39 +113,51 @@ public class MapGenerator : MonoBehaviour {
 		if (height != map.GetLength(1)) height = map.GetLength(1);
 
 		if (generator.getType() != genType) {
-			switch (genType) {
-				default:
-				case GENERATOR_TYPE.CELLULAR_AUTOMATA:	generator = GetComponentInChildren<GeneratorCellularAutomata>();	break;
-				case GENERATOR_TYPE.TUNNELING:			generator = GetComponentInChildren<GeneratorTunneling>();			break;
-				case GENERATOR_TYPE.BSPTREE:			generator = GetComponentInChildren<GeneratorBSPTree>();				break;
-				case GENERATOR_TYPE.RANDOM_WALK:		generator = GetComponentInChildren<GeneratorRandomWalk>();			break;
-				case GENERATOR_TYPE.ROOM_ADDITION:		generator = GetComponentInChildren<GeneratorRoomAddition>();		break;
-				case GENERATOR_TYPE.CITY_BUILDINGS:		generator = GetComponentInChildren<GeneratorCityBuildings>();		break;
-				case GENERATOR_TYPE.ROOMY_MAZE:			generator = GetComponentInChildren<GeneratorRoomyMaze>();			break;
-				case GENERATOR_TYPE.MESSY_BSPTREE:		generator = GetComponentInChildren<GeneratorMessyBSPTree>();		break;
-			}
+			generator = genType switch {
+				GENERATOR_TYPE.TUNNELING => GetComponentInChildren<GeneratorTunneling>(),
+				GENERATOR_TYPE.BSPTREE => GetComponentInChildren<GeneratorBSPTree>(),
+				GENERATOR_TYPE.RANDOM_WALK => GetComponentInChildren<GeneratorRandomWalk>(),
+				GENERATOR_TYPE.ROOM_ADDITION => GetComponentInChildren<GeneratorRoomAddition>(),
+				GENERATOR_TYPE.CITY_BUILDINGS => GetComponentInChildren<GeneratorCityBuildings>(),
+				GENERATOR_TYPE.ROOMY_MAZE => GetComponentInChildren<GeneratorRoomyMaze>(),
+				GENERATOR_TYPE.MESSY_BSPTREE => GetComponentInChildren<GeneratorMessyBSPTree>(),
+				_ => GetComponentInChildren<GeneratorCellularAutomata>(),
+			};
 		}
 		FillArea(map, new Rect(0, 0, width, height), TILE.WALL);
 		//testGen();
 		FillArea(map, generator.generate(width - (horizontalBorderStrength * 2), height - (verticalBorderStrength * 2)), horizontalBorderStrength, verticalBorderStrength);
 		meshGen.GenerateMesh(map, meshUnitSize);
+		generateMapEvent.Invoke();
+		//for (uint i = 0, count = 10000; i < count; i++) {
+		//	ulong pos = rand.position;
+		//	for (int j = 0; j < 3; j++) {
+		//		Debug.Log("Random: " + rand.Next());
+		//	}
+		//	rand.position = pos;
+		//}
+		//for (uint i = 0; i < 10; i++) {
+		//	for (uint j = 0; j < i; j++) {
+		//		Debug.Log("i: "+ i + ", \tj: " + j + "= \t"  + (rand.tNum(i) - rand.tNum(j)));
+		//	}
+		//}
 	}
 
-	private void testGen() {
-		for (int x = 0, i = 0; x + width / 6 < width; x += width / 3) {
-			for (int y = 0, j = 0; y + height / 6 < height; y += height / 3) {
-				int tileX = x + width / 6;
-				int tileY = y + height / 6;
-				map[tileX, tileY] = (int)TILE.FLOOR;
-				int toX = tileX + ((i - 1) * (width / 6));
-				int toY = tileY + ((j - 1) * (height / 6));
-				map[toX, toY] = (int)TILE.FLOOR;
-				CreateMeanderingly(map, tileX, tileY, toX, toY);
-				j++;
-			}
-			i++;
-		}
-	}
+	//private void testGen() {
+	//	for (int x = 0, i = 0; x + width / 6 < width; x += width / 3) {
+	//		for (int y = 0, j = 0; y + height / 6 < height; y += height / 3) {
+	//			int tileX = x + width / 6;
+	//			int tileY = y + height / 6;
+	//			map[tileX, tileY] = (int)TILE.FLOOR;
+	//			int toX = tileX + ((i - 1) * (width / 6));
+	//			int toY = tileY + ((j - 1) * (height / 6));
+	//			map[toX, toY] = (int)TILE.FLOOR;
+	//			CreateMeanderingly(map, tileX, tileY, toX, toY);
+	//			j++;
+	//		}
+	//		i++;
+	//	}
+	//}
 
 	public static void FillArea(int[,] m, Rect area, TILE tileType = TILE.WALL) {
 		for (int x = (int)area.x; x < (int)(area.x + area.width); x++)
@@ -227,7 +270,7 @@ public class MapGenerator : MonoBehaviour {
 	}
 
 	private void CreateMeanderingly(int[,] m, Vector2 v1, Vector2 v2, TILE tileType = TILE.FLOOR) {
-		CreateMeanderingly(m, v1.x, v1.y, v2.x, v2.y);
+		CreateMeanderingly(m, v1.x, v1.y, v2.x, v2.y, tileType);
 	}
 	private void CreateMeanderingly(int[,] m, float x1, float y1, float x2, float y2, TILE tileType = TILE.FLOOR) {
 		if (x1 == x2) {
@@ -329,10 +372,11 @@ public class MapGenerator : MonoBehaviour {
 	}
 
 	public static bool hasCrossNeighbor(int x, int y, int[,] map, TILE type = TILE.WALL) {
-		if (map[x+1, y] == (int)type) return true;
-		if (map[x-1, y] == (int)type) return true;
-		if (map[x, y+1] == (int)type) return true;
-		if (map[x, y-1] == (int)type) return true;
+		if (map[x, y] == (int)type
+			|| map[x+1, y] == (int)type
+			|| map[x-1, y] == (int)type 
+			|| map[x, y+1] == (int)type 
+			|| map[x, y-1] == (int)type) return true;
 		//for (int x = (int)v.x - 1; x <= v.x + 1; x++) {
 		//	for (int y = (int)v.y - 1; y <= v.y + 1; y++) {
 		//		if ((x == (int)v.x || y == (int)v.y) && map[x, y] == (int)tile.wall) {

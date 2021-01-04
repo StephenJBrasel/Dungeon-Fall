@@ -43,10 +43,6 @@ public class GeneratorRoomAddition : Generator {
 		return GENERATOR_TYPE.ROOM_ADDITION;
 	}
 
-	public override Vector2 getStartPoint() {
-		throw new NotImplementedException();
-	}
-
 	private void RoomAddition() {
 		rooms = new ArrayList(maxNumRooms);
 		int[,] room = generateRoom();
